@@ -1,16 +1,22 @@
 package com.sky.mapper;
 
+import com.github.pagehelper.Page;
 import com.sky.dto.EmployeeDTO;
+import com.sky.dto.EmployeePageQueryDTO;
 import com.sky.entity.Employee;
+import com.sky.result.PageResult;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
+
+import java.util.List;
 
 @Mapper
 public interface EmployeeMapper {
 
     /**
      * 根据用户名查询员工
+     *
      * @param username
      * @return
      */
@@ -19,18 +25,19 @@ public interface EmployeeMapper {
 
     /**
      * 插入员工数据
+     *
      * @param employee
      */
 
     @Insert("insert into employee " +
             "(username, name, password, phone, sex, id_number, status, create_time, update_time, create_user, update_user) " +
-            "values (#{username},#{name},#{password},#{phone},#{sex},#{idNumber},#{status},#{createTime},#{updateTime},#{createUser},#{updateUser})" )
+            "values (#{username},#{name},#{password},#{phone},#{sex},#{idNumber},#{status},#{createTime},#{updateTime},#{createUser},#{updateUser})")
     void insert(Employee employee);
-
 
 
     /**
      * 根据身份证号查询员工
+     *
      * @param idNumber
      * @return
      */
@@ -39,6 +46,7 @@ public interface EmployeeMapper {
 
     /**
      * 根据手机号查询员工
+     *
      * @param phone
      * @return
      */
@@ -47,9 +55,18 @@ public interface EmployeeMapper {
 
     /**
      * 根据姓名查询员工
+     *
      * @param name
      * @return
      */
     @Select("select * from employee where name = #{name}")
     Employee getByName(String name);
+
+    /**
+     * 分页查询员工数据
+     *
+     * @param employeePageQueryDTO
+     * @return
+     */
+    Page<Employee> pageQuery(EmployeePageQueryDTO employeePageQueryDTO);
 }
