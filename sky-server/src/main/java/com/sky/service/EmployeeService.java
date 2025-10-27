@@ -1,7 +1,10 @@
 package com.sky.service;
 
+import com.sky.dto.EmployeeDTO;
 import com.sky.dto.EmployeeLoginDTO;
 import com.sky.entity.Employee;
+import org.apache.ibatis.annotations.Select;
+import org.springframework.stereotype.Service;
 
 public interface EmployeeService {
 
@@ -11,5 +14,14 @@ public interface EmployeeService {
      * @return
      */
     Employee login(EmployeeLoginDTO employeeLoginDTO);
+
+
+    /**
+     * 新增员工
+     * @param newEmployee
+     */
+    void save(EmployeeDTO newEmployee);
+
+
 
 }
