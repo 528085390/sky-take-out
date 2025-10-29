@@ -10,13 +10,13 @@ import java.util.List;
 public interface DishFlavorMapper {
 
 
-
     /**
      * 批量插入菜品口味数据
      *
      * @param dishFlavors
      */
     void insertBatch(List<DishFlavor> dishFlavors);
+
 
     /**
      * 根据菜品id查询对应的口味数据
@@ -27,12 +27,23 @@ public interface DishFlavorMapper {
     @Select("select * from dish_flavor where dish_id = #{dishId}")
     List<DishFlavor> getByDishId(Long dishId);
 
+
     /**
      * 根据id批量删除口味数据
      *
-     * @param ids
+     * @param dishIds
      */
-    void deleteByIds(List<Long> ids);
+    void deleteByIds(List<Long> dishIds);
+
+
+    /**
+     * 根据菜品id删除对应的口味数据
+     *
+     * @param dishId
+     * @return
+     */
+    @Select("delete from dish_flavor where dish_id = #{dishId}")
+    void deleteByDishId(Long dishId);
 
 
 }
