@@ -2,13 +2,17 @@ package com.sky.service.impl;
 
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
+import com.sky.constant.MessageConstant;
+import com.sky.constant.StatusConstant;
 import com.sky.dto.DishDTO;
 import com.sky.dto.DishPageQueryDTO;
 import com.sky.entity.Dish;
 import com.sky.entity.DishFlavor;
+import com.sky.exception.DeletionNotAllowedException;
 import com.sky.mapper.CategoryMapper;
 import com.sky.mapper.DishFlavorMapper;
 import com.sky.mapper.DishMapper;
+import com.sky.mapper.SetmealDishMapper;
 import com.sky.result.PageResult;
 import com.sky.service.DishService;
 import com.sky.vo.DishVO;
@@ -17,7 +21,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -32,6 +35,9 @@ public class DishServiceImpl implements DishService {
 
     @Autowired
     private DishFlavorMapper dishFlavorMapper;
+
+    @Autowired
+    private SetmealDishMapper setmealDishMapper;
 
 
     /**
@@ -77,15 +83,28 @@ public class DishServiceImpl implements DishService {
      *
      * @param ids
      */
+    @Transactional
     @Override
-    public void delete(String ids) {
-        String[] idsString = ids.split(",");
-        List<Long> idsList = new ArrayList<>();
-        for (String id : idsString) {
-            idsList.add(Long.valueOf(id));
+    public void deleteBatch(List<Long> ids) {
+        //判断当前菜品是否在售，如果处于售中则无法删除
+        ids.forEach(id -> {
+            Dish dish = dishMapper.getById(id);
+            if (dish.getStatus().equals(StatusConstant.ENABLE)) {
+                throw new DeletionNotAllowedException(MessageConstant.DISH_ON_SALE);
+            }
+        });
+
+        //查询当前菜品是否关联了套餐，如果关联了就抛出业务异常
+        if (!setmealDishMapper.getByDishIds(ids).isEmpty()) {
+            throw new DeletionNotAllowedException(MessageConstant.DISH_BE_RELATED_BY_SETMEAL);
         }
-        dishMapper.deleteById(idsList);
-        dishFlavorMapper.deleteByIds(idsList);
+
+
+        //删除菜品数据
+        dishMapper.deleteBatch(ids);
+
+        //删除菜品口味数据
+        dishFlavorMapper.deleteByIds(ids);
     }
 
 
@@ -96,7 +115,7 @@ public class DishServiceImpl implements DishService {
      */
     @Override
     public DishVO findById(Long id) {
-        Dish dish = dishMapper.findById(id);
+        Dish dish = dishMapper.getById(id);
         List<DishFlavor> flavors = dishFlavorMapper.getByDishId(id);
         String categoryName = categoryMapper.getById(dish.getCategoryId()).getName();
 

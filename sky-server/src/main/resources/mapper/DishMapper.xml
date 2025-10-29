@@ -26,7 +26,7 @@
         ORDER BY d.create_time DESC
     </select>
 
-    <delete id="deleteById">
+    <delete id="deleteBatch">
         DELETE FROM dish WHERE id IN
         <foreach collection="ids" item="id" index="index" separator="," open="(" close=")">
             #{id}
