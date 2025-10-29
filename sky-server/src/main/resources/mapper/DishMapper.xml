@@ -11,19 +11,19 @@
 
 
     <select id="pageQuery" resultType="com.sky.vo.DishVO">
-        SELECT * FROM dish
+        SELECT d.*,c.name AS categoryName FROM dish d JOIN category c ON d.category_id = c.id
         <where>
             <if test="categoryId != null">
-                AND category_id = #{categoryId}
+                AND d.category_id = #{categoryId}
             </if>
             <if test="status != null">
-                AND status = #{status}
+                AND d.status = #{status}
             </if>
             <if test="name != null">
-                AND name LIKE '%${name}%'
+                AND d.name LIKE '%${name}%'
             </if>
-
         </where>
+        ORDER BY d.create_time DESC
     </select>
 
     <delete id="deleteById">
@@ -33,7 +33,7 @@
         </foreach>
     </delete>
 
-    <update id="update">
+    <update id="update" useGeneratedKeys="true" keyProperty="id">
         UPDATE dish
         <set>
             <if test="name != null">

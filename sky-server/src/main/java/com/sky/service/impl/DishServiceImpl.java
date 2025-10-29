@@ -68,17 +68,8 @@ public class DishServiceImpl implements DishService {
     @Override
     public PageResult page(DishPageQueryDTO dishPageQueryDTO) {
         PageHelper.startPage(dishPageQueryDTO.getPage(), dishPageQueryDTO.getPageSize());
-        Page<DishVO> dishes = dishMapper.pageQuery(dishPageQueryDTO);
-        List<DishVO> list = dishes.getResult();
-
-        for (DishVO dish : list) {
-            List<DishFlavor> flavors = dishFlavorMapper.getByDishId(dish.getId());
-            String categoryName = categoryMapper.getById(dish.getCategoryId()).getName();
-            dish.setFlavors(flavors);
-            dish.setCategoryName(categoryName);
-        }
-        PageResult pageResult = new PageResult(dishes.getTotal(), list);
-        return pageResult;
+        Page<DishVO> page = dishMapper.pageQuery(dishPageQueryDTO);
+        return new PageResult(page.getTotal(), page.getResult());
     }
 
     /**
@@ -130,9 +121,10 @@ public class DishServiceImpl implements DishService {
         BeanUtils.copyProperties(dishDTO, dish);
 
         dishMapper.update(dish);
-        dishFlavorMapper.deleteByIds(Collections.singletonList(dishDTO.getId()));
 
         //保存菜品口味数据
+        dishFlavorMapper.deleteByIds(Collections.singletonList(dishDTO.getId()));
+
         List<DishFlavor> flavors = dishDTO.getFlavors();
         if (flavors != null && !flavors.isEmpty()) {
             Long dishId = dishDTO.getId();
