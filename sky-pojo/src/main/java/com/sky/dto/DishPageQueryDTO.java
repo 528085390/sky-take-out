@@ -1,10 +1,12 @@
 package com.sky.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.io.Serializable;
 
 @Data
+@AllArgsConstructor
 public class DishPageQueryDTO implements Serializable {
 
     private int page;
