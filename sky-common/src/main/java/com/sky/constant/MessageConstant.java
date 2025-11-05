@@ -26,4 +26,5 @@ public class MessageConstant {
     public static final String ALREADY_EXISTS = "已存在";
     public static final String CATEGORY_NOT_FOUND = "分类不存在";
     public static final String SETMEAL_NOT_FOUND = "套餐中无菜品";
+    public static final String SHOPPING_CART_ERROR = "购物车添加错误";
 }
