@@ -8,6 +8,7 @@ import com.sky.service.SetmealService;
 import com.sky.vo.SetmealVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,6 +27,7 @@ public class SetmealController {
      * @param setmealDTO
      * @return
      */
+    @CacheEvict(value = "setmealCache",key = "#setmealDTO.categoryId")
     @PostMapping
     public Result save(@RequestBody SetmealDTO setmealDTO) {
         log.info("新增套餐：{}", setmealDTO);
@@ -66,6 +68,7 @@ public class SetmealController {
      * @param setmealDTO
      * @return
      */
+    @CacheEvict(value = "setmealCache",key = "#setmealDTO.categoryId")
     @PutMapping
     public Result update(@RequestBody SetmealDTO setmealDTO) {
         log.info("修改套餐：{}", setmealDTO);
@@ -80,6 +83,7 @@ public class SetmealController {
      * @param id
      * @return
      */
+    @CacheEvict(value = "setmealCache",allEntries = true)
     @PostMapping("/status/{status}")
     public Result startOrStop(@PathVariable Integer status, Long id) {
         log.info("启用、禁用套餐：{} , {}", id, status);
@@ -93,6 +97,7 @@ public class SetmealController {
      * @param ids
      * @return
      */
+    @CacheEvict(value = "setmealCache",allEntries = true)
     @DeleteMapping
     public Result deleteBatch(@RequestParam List<Long> ids) {
         log.info("批量删除套餐：{}", ids);
