@@ -13,9 +13,12 @@ import com.sky.mapper.SetmealMapper;
 import com.sky.mapper.ShoppingCartMapper;
 import com.sky.service.ShoppingCartService;
 import com.sky.vo.SetmealVO;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 
+import java.beans.Beans;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -34,47 +37,41 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
 
 
     /**
-     * 添加购物车
+     * 添加购物车数据
      *
      * @param shoppingCartDTO
      */
     @Override
     public void add(Long userId, ShoppingCartDTO shoppingCartDTO) {
+        ShoppingCart shoppingCart = new ShoppingCart();
+        BeanUtils.copyProperties(shoppingCartDTO, shoppingCart);
+        shoppingCart.setUserId(userId);
+        List<ShoppingCart> list = shoppingCartMapper.list(shoppingCart);
 
         // 判断当前添加的购物车项，是否在购物车中存在
-        ShoppingCart shoppingCartDish = shoppingCartMapper.getByUserIdAndDishId(userId, shoppingCartDTO);
-        ShoppingCart shoppingCartSetmeal = shoppingCartMapper.getByUserIdAndSetmealId(userId, shoppingCartDTO);
-        if (shoppingCartDish != null) {
-            shoppingCartMapper.increaseNumber(shoppingCartDish.getId());
-            return;
-        } else if (shoppingCartSetmeal != null) {
-            shoppingCartMapper.increaseNumber(shoppingCartSetmeal.getId());
+        if (list != null && !list.isEmpty()) {
+            shoppingCart = list.get(0);
+            shoppingCart.setNumber(shoppingCart.getNumber() + 1);
+            shoppingCartMapper.update(shoppingCart);
             return;
         }
 
 
         // 创建一个新购物车数据
-        ShoppingCart shoppingCart = ShoppingCart.builder()
-                .userId(userId)
-                .dishId(shoppingCartDTO.getDishId())
-                .setmealId(shoppingCartDTO.getSetmealId())
-                .dishFlavor(shoppingCartDTO.getDishFlavor())
-                .createTime(LocalDateTime.now())
-                .number(1)
-                .build();
-        if (shoppingCartDTO.getDishId() != null) {
+        if (shoppingCart.getDishId() != null) {
             Dish dish = dishMapper.getById(shoppingCart.getDishId());
             shoppingCart.setName(dish.getName());
             shoppingCart.setImage(dish.getImage());
             shoppingCart.setAmount(dish.getPrice());
-        } else if (shoppingCartDTO.getSetmealId() != null) {
+        } else {
             SetmealVO setmeal = setmealMapper.getById(shoppingCart.getSetmealId());
             shoppingCart.setName(setmeal.getName());
             shoppingCart.setImage(setmeal.getImage());
             shoppingCart.setAmount(setmeal.getPrice());
-        } else {
-            throw new BaseException(MessageConstant.SHOPPING_CART_ERROR);
         }
+
+        shoppingCart.setNumber(1);
+        shoppingCart.setCreateTime(LocalDateTime.now());
         shoppingCartMapper.insert(shoppingCart);
     }
 
@@ -87,39 +84,40 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
      */
     @Override
     public List<ShoppingCart> list(Long userId) {
-        List<ShoppingCart> list = shoppingCartMapper.list(userId);
-        return list;
+        ShoppingCart shoppingCart = ShoppingCart.builder()
+                .userId(userId)
+                .build();
+        return shoppingCartMapper.list(shoppingCart);
     }
 
     /**
-     * 删除购物车
+     * 删除购物车数据
      *
      * @param shoppingCartDTO
      */
     @Override
     public void sub(Long userId, ShoppingCartDTO shoppingCartDTO) {
-        ShoppingCart shoppingCartDish = shoppingCartMapper.getByUserIdAndDishId(userId, shoppingCartDTO);
-        ShoppingCart shoppingCartSetmeal = shoppingCartMapper.getByUserIdAndSetmealId(userId, shoppingCartDTO);
 
-        if (shoppingCartDish != null) {
-            if (shoppingCartDish.getNumber() == 1) {
-                shoppingCartMapper.deleteById(userId,shoppingCartDish.getId());
+        ShoppingCart shoppingCartDish = new ShoppingCart();
+        BeanUtils.copyProperties(shoppingCartDTO, shoppingCartDish);
+
+        List<ShoppingCart> list = shoppingCartMapper.list(shoppingCartDish);
+
+        if (list != null && !list.isEmpty()) {
+            ShoppingCart shoppingCart = list.get(0);
+            if (shoppingCart.getNumber() == 1) {
+                shoppingCartMapper.deleteById(userId, shoppingCart.getId());
             } else {
-                shoppingCartMapper.decreaseNumber(shoppingCartDish.getId());
+                shoppingCart.setNumber(shoppingCart.getNumber() - 1);
+                shoppingCartMapper.update(shoppingCart);
             }
-        } else if (shoppingCartSetmeal != null) {
-            if (shoppingCartSetmeal.getNumber() == 1) {
-                shoppingCartMapper.deleteById(userId,shoppingCartSetmeal.getId());
-            }else {
-                shoppingCartMapper.decreaseNumber(shoppingCartSetmeal.getId());
-            }
-
         }
+
     }
 
 
     /**
-     * 清空购物车
+     * 清空购物车数据
      */
     @Override
     public void clean(Long userId) {

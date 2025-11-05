@@ -31,7 +31,7 @@ public class ShoppingCartController {
     public Result add(@RequestBody ShoppingCartDTO ShoppingCartDTO) {
         Long userId = BaseContext.getCurrentId();
         log.info("用户{}添加购物车：{}", userId, ShoppingCartDTO);
-        shoppingCartService.add(userId,ShoppingCartDTO);
+        shoppingCartService.add(userId, ShoppingCartDTO);
         return Result.success();
     }
 
@@ -60,7 +60,7 @@ public class ShoppingCartController {
     public Result sub(@RequestBody ShoppingCartDTO shoppingCartDTO) {
         Long userId = BaseContext.getCurrentId();
         log.info("用户{}删除购物车数据：{}", userId, shoppingCartDTO);
-        shoppingCartService.sub(userId,shoppingCartDTO);
+        shoppingCartService.sub(userId, shoppingCartDTO);
         return null;
     }
 
