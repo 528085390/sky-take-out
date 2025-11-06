@@ -19,6 +19,7 @@ import org.aspectj.weaver.ast.Or;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -49,6 +50,7 @@ public class OrderServiceImpl implements OrderService {
      * @return
      */
     @Override
+    @Transactional
     public OrderSubmitVO submit(OrdersSubmitDTO ordersSubmitDTO) {
         //构造订单数据
         Orders orders = new Orders();
@@ -95,6 +97,8 @@ public class OrderServiceImpl implements OrderService {
 
         orderDetailMapper.insertBatch(orderDetails);
 
+        //清空原购物车数据
+        shoppingCartMapper.deleteAllByUserId(userId);
 
         //返回订单数据
         OrderSubmitVO orderSubmitVO = OrderSubmitVO.builder()
@@ -162,7 +166,7 @@ public class OrderServiceImpl implements OrderService {
             return order;
         }).collect(Collectors.toList());
 
-        return new PageResult(list.size(),list);
+        return new PageResult(list.size(), list);
 
     }
 
@@ -186,4 +190,39 @@ public class OrderServiceImpl implements OrderService {
         orderMapper.update(orders);
     }
 
+
+    /**
+     * 再来一单
+     *
+     * @param id
+     */
+    @Override
+    @Transactional
+    public void repetition(Long id) {
+        //找回订单数据
+        Long userId = BaseContext.getCurrentId();
+        List<OrderDetail> orderDetails = orderDetailMapper.listByOrderId(id);
+
+        //构造购物车数据
+        List<ShoppingCart> shoppingCarts = orderDetails.stream().map(orderDetail -> {
+            ShoppingCart shoppingCart = ShoppingCart.builder()
+                    .name(orderDetail.getName())
+                    .userId(userId)
+                    .dishId(orderDetail.getDishId())
+                    .setmealId(orderDetail.getSetmealId())
+                    .dishFlavor(orderDetail.getDishFlavor())
+                    .number(orderDetail.getNumber())
+                    .amount(orderDetail.getAmount())
+                    .image(orderDetail.getImage())
+                    .createTime(LocalDateTime.now())
+                    .build();
+            return shoppingCart;
+        }).collect(Collectors.toList());
+
+        shoppingCartMapper.deleteAllByUserId(userId);
+        shoppingCartMapper.insertBatch(shoppingCarts);
+    }
+
 }
+
+

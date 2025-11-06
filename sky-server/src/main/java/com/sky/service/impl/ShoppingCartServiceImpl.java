@@ -20,7 +20,9 @@ import org.springframework.stereotype.Service;
 
 import java.beans.Beans;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.ListResourceBundle;
 
 @Service
 
@@ -72,7 +74,10 @@ public class ShoppingCartServiceImpl implements ShoppingCartService {
 
         shoppingCart.setNumber(1);
         shoppingCart.setCreateTime(LocalDateTime.now());
-        shoppingCartMapper.insert(shoppingCart);
+
+        List<ShoppingCart> shoppingCarts = new ArrayList<>();
+        shoppingCarts.add(shoppingCart);
+        shoppingCartMapper.insertBatch(shoppingCarts);
     }
 
 

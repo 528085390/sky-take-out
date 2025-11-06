@@ -18,15 +18,6 @@ public interface ShoppingCartMapper {
      */
     List<ShoppingCart> list(ShoppingCart shoppingCart);
 
-    /**
-     * 插入购物车数据
-     *
-     * @param shoppingCart
-     */
-    @Insert("insert into shopping_cart (name, image, dish_id, setmeal_id, dish_flavor, number, amount, create_time, user_id) " +
-            "values (#{name}, #{image}, #{dishId}, #{setmealId}, #{dishFlavor}, #{number}, #{amount}, #{createTime}, #{userId})")
-    void insert(ShoppingCart shoppingCart);
-
 
     /**
      * 根据用户id删除购物车数据
@@ -53,6 +44,14 @@ public interface ShoppingCartMapper {
      */
     @Update("update shopping_cart set number = #{number} where id = #{id}")
     void update(ShoppingCart shoppingCart);
+
+
+    /**
+     * 批量插入购物车数据
+     *
+     * @param shoppingCarts
+     */
+    void insertBatch(List<ShoppingCart> shoppingCarts);
 }
 
 
