@@ -2,13 +2,20 @@ package com.sky.service.impl;
 
 
 import cn.hutool.core.util.IdUtil;
-import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+import com.github.pagehelper.Page;
+import com.github.pagehelper.PageHelper;
+import com.sky.constant.MessageConstant;
 import com.sky.context.BaseContext;
+import com.sky.dto.OrdersPageQueryDTO;
 import com.sky.dto.OrdersSubmitDTO;
 import com.sky.entity.*;
+import com.sky.exception.BaseException;
 import com.sky.mapper.*;
+import com.sky.result.PageResult;
 import com.sky.service.OrderService;
 import com.sky.vo.OrderSubmitVO;
+import com.sky.vo.OrderVO;
+import org.aspectj.weaver.ast.Or;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -98,4 +105,85 @@ public class OrderServiceImpl implements OrderService {
                 .build();
         return orderSubmitVO;
     }
+
+
+    /**
+     * 订单详情
+     *
+     * @param id
+     * @return
+     */
+    @Override
+    public OrderVO getDetail(Long id) {
+        Orders order = orderMapper.getById(id);
+        List<OrderDetail> orderDetailList = orderDetailMapper.listByOrderId(id);
+
+        //订单菜品信息
+        String orderDishes = orderDetailList.stream().map(orderDetail -> {
+            String name = orderDetail.getName();
+            Integer number = orderDetail.getNumber();
+            String info = name + "x" + number;
+            return info;
+        }).collect(Collectors.joining(" , "));
+
+        OrderVO orderVO = new OrderVO();
+        BeanUtils.copyProperties(order, orderVO);
+        orderVO.setOrderDetailList(orderDetailList);
+        orderVO.setOrderDishes(orderDishes);
+
+        return orderVO;
+    }
+
+
+    /**
+     * 历史订单分页查询
+     *
+     * @param ordersPageQueryDTO
+     * @return
+     */
+    @Override
+    public PageResult page(OrdersPageQueryDTO ordersPageQueryDTO) {
+        PageHelper.startPage(ordersPageQueryDTO.getPage(), ordersPageQueryDTO.getPageSize());
+        ordersPageQueryDTO.setUserId(BaseContext.getCurrentId());
+        List<OrderVO> list = orderMapper.page(ordersPageQueryDTO);
+
+        list = list.stream().map(order -> {
+            List<OrderDetail> orderDetailList = orderDetailMapper.listByOrderId(order.getId());
+            order.setOrderDetailList(orderDetailList);
+
+            String orderDishes = orderDetailList.stream().map(orderDetail -> {
+                String name = orderDetail.getName();
+                Integer number = orderDetail.getNumber();
+                String info = name + "x" + number;
+                return info;
+            }).collect(Collectors.joining(" , "));
+            order.setOrderDishes(orderDishes);
+
+            return order;
+        }).collect(Collectors.toList());
+
+        return new PageResult(list.size(),list);
+
+    }
+
+
+    /**
+     * 取消订单
+     *
+     * @param id
+     */
+    @Override
+    public void cancel(Long id) {
+        Long userId = BaseContext.getCurrentId();
+        Orders orders = orderMapper.getById(id);
+        if (!orders.getUserId().equals(userId)) {
+            throw new BaseException(MessageConstant.UNKNOWN_ERROR);
+        }
+        orders.setStatus(Orders.CANCELLED);
+        orders.setCancelReason("用户取消");
+        orders.setCancelTime(LocalDateTime.now());
+
+        orderMapper.update(orders);
+    }
+
 }

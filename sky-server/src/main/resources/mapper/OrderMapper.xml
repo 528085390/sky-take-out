@@ -16,4 +16,54 @@
                 #{estimatedDeliveryTime}, #{deliveryStatus}, #{deliveryTime}, #{packAmount},
                 #{tablewareNumber}, #{tablewareStatus})
     </insert>
+
+
+    <select id="page" resultType="com.sky.vo.OrderVO">
+        SELECT * FROM orders
+        WHERE user_id = #{userId}
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        <if test="phone != null">
+            AND phone LIKE '%${phone}%'
+        </if>
+        <if test="beginTime != null">
+            AND order_time >= #{beginTime}
+        </if>
+        <if test="endTime != null">
+            AND order_time &lt;= #{endTime}
+        </if>
+        <if test="number != null">
+            AND number LIKE '%${number}%'
+        </if>
+        order by order_time desc
+    </select>
+
+    <update id="update">
+        UPDATE orders
+        <set>
+            <if test="status != null">
+                status = #{status},
+            </if>
+            <if test="payStatus != null">
+                pay_status = #{payStatus},
+            </if>
+            <if test="cancelReason != null">
+                cancel_reason = #{cancelReason},
+            </if>
+            <if test="rejectionReason != null">
+                rejection_reason = #{rejectionReason},
+            </if>
+            <if test="cancelTime != null">
+                cancel_time = #{cancelTime},
+            </if>
+            <if test="checkoutTime != null">
+                checkout_time = #{checkoutTime},
+            </if>
+            <if test="estimatedDeliveryTime != null">
+                estimated_delivery_time = #{estimatedDeliveryTime},
+            </if>
+        </set>
+        WHERE id = #{id}
+    </update>
 </mapper>
