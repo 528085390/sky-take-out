@@ -7,6 +7,7 @@ import com.sky.entity.Orders;
 import com.sky.vo.OrderVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
+import org.springframework.stereotype.Indexed;
 
 
 @Mapper
@@ -54,4 +55,15 @@ public interface OrderMapper {
      */
     @Select("select * from orders where number = #{orderNumber}")
     Orders getByNumber(String orderNumber);
+
+
+    /**
+     * 统计指定状态的订单数量
+     *
+     * @param status
+     * @return
+     *
+     */
+    @Select("select count(*) from orders where status = #{status}")
+    Integer countStatus(Integer status);
 }

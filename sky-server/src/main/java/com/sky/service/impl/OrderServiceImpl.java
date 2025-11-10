@@ -3,6 +3,7 @@ package com.sky.service.impl;
 
 import cn.hutool.core.util.IdUtil;
 import com.alibaba.fastjson.JSONObject;
+import com.github.pagehelper.Page;
 import com.github.pagehelper.PageHelper;
 import com.sky.constant.MessageConstant;
 import com.sky.context.BaseContext;
@@ -17,10 +18,12 @@ import com.sky.result.PageResult;
 import com.sky.service.OrderService;
 import com.sky.utils.WeChatPayUtil;
 import com.sky.vo.OrderPaymentVO;
+import com.sky.vo.OrderStatisticsVO;
 import com.sky.vo.OrderSubmitVO;
 import com.sky.vo.OrderVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Indexed;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,8 +50,6 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     private OrderDetailMapper orderDetailMapper;
 
-    @Autowired
-    private WeChatPayUtil weChatPayUtil;
 
     /**
      * 用户下单
@@ -64,7 +65,8 @@ public class OrderServiceImpl implements OrderService {
         BeanUtils.copyProperties(ordersSubmitDTO, orders);
 
         AddressBook addressBook = addressBookMapper.getById(ordersSubmitDTO.getAddressBookId());
-        orders.setAddress(addressBook.getDetail());
+        String address = addressBook.getProvinceName() + addressBook.getCityName() + addressBook.getDistrictName() + addressBook.getDetail();
+        orders.setAddress(address);
         orders.setConsignee(addressBook.getConsignee());
         orders.setPhone(addressBook.getPhone());
 
@@ -280,6 +282,53 @@ public class OrderServiceImpl implements OrderService {
                 .build();
 
         orderMapper.update(orders);
+    }
+
+    /**
+     * 订单统计
+     *
+     * @return
+     */
+    @Override
+    public OrderStatisticsVO statistics() {
+        Integer confirmed = orderMapper.countStatus(Orders.CONFIRMED);
+        Integer deliveryInProgress = orderMapper.countStatus(Orders.DELIVERY_IN_PROGRESS);
+        Integer toBeConfirmed = orderMapper.countStatus(Orders.TO_BE_CONFIRMED);
+
+        return OrderStatisticsVO.builder()
+                .confirmed(confirmed)
+                .deliveryInProgress(deliveryInProgress)
+                .toBeConfirmed(toBeConfirmed)
+                .build();
+    }
+
+
+    /**
+     * 订单搜索
+     *
+     * @param ordersPageQueryDTO
+     * @return
+     */
+    @Override
+    public PageResult conditionSearch(OrdersPageQueryDTO ordersPageQueryDTO) {
+        PageHelper.startPage(ordersPageQueryDTO.getPage(), ordersPageQueryDTO.getPageSize());
+        List<OrderVO> list = orderMapper.page(ordersPageQueryDTO);
+        list = list.stream().map(order -> {
+            List<OrderDetail> orderDetailList = orderDetailMapper.listByOrderId(order.getId());
+            order.setOrderDetailList(orderDetailList);
+
+            String orderDishes = orderDetailList.stream().map(orderDetail -> {
+                String name = orderDetail.getName();
+                Integer number = orderDetail.getNumber();
+                String info = name + "x" + number;
+                return info;
+            }).collect(Collectors.joining(" , "));
+            order.setOrderDishes(orderDishes);
+
+            return order;
+        }).collect(Collectors.toList());
+        return new PageResult(list.size(), list);
+
     }
 
 
