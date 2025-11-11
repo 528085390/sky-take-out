@@ -1,5 +1,6 @@
 package com.sky.service.impl;
 
+import com.sky.dto.OrderStatisticsDTO;
 import com.sky.entity.Orders;
 import com.sky.mapper.OrderDetailMapper;
 import com.sky.mapper.OrderMapper;
@@ -14,6 +15,8 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class ReportServiceImpl implements ReportService {
@@ -33,30 +36,31 @@ public class ReportServiceImpl implements ReportService {
      */
     @Override
     public TurnoverReportVO getTurnoverStatistics(LocalDate begin, LocalDate end) {
-        // 生成日期列表字符串
-        List<LocalDate> dateList = new ArrayList<>();
+         // 生成日期列表
+    List<LocalDate> dateList = new ArrayList<>();
+    LocalDate current = begin;
+    while (!current.isAfter(end)) {
+        dateList.add(current);
+        current = current.plusDays(1);
+    }
 
-        dateList.add(begin);
-        while (!begin.equals(end)) {
-            begin = begin.plusDays(1);
-            dateList.add(begin);
-        }
+    // 一次性查询所有日期的营业额数据
+    List<OrderStatisticsDTO> statisticsList = orderMapper.getTurnoverStatisticsByDateRange(begin, end, Orders.COMPLETED);
 
-        // 查询各个日期的营业额数据
-        List<BigDecimal> turnoverList = new ArrayList<>();
-        for (LocalDate date : dateList) {
-            BigDecimal sum = orderMapper.getSumByDate(date, Orders.COMPLETED);
-            if (sum == null) {
-                sum = BigDecimal.valueOf(0.0);
-            }
-            turnoverList.add(sum);
-        }
+    // 创建日期到营业额的映射
+    Map<LocalDate, BigDecimal> statisticsMap = statisticsList.stream()
+            .collect(Collectors.toMap(OrderStatisticsDTO::getDate, OrderStatisticsDTO::getTurnover));
 
-        // 构建并返回 TurnoverReportVO 对象
-        return TurnoverReportVO.builder()
-                .dateList(StringUtils.join(dateList, ","))
-                .turnoverList(StringUtils.join(turnoverList, ","))
-                .build();
+    // 构建营业额列表，缺失数据用0填充
+    List<BigDecimal> turnoverList = dateList.stream()
+            .map(date -> statisticsMap.getOrDefault(date, BigDecimal.ZERO))
+            .collect(Collectors.toList());
+
+    // 构建并返回 TurnoverReportVO 对象
+    return TurnoverReportVO.builder()
+            .dateList(StringUtils.join(dateList, ","))
+            .turnoverList(StringUtils.join(turnoverList, ","))
+            .build();
     }
 
 

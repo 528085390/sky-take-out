@@ -3,6 +3,7 @@ package com.sky.mapper;
 
 
 import com.github.pagehelper.Page;
+import com.sky.dto.OrderStatisticsDTO;
 import com.sky.dto.OrdersPageQueryDTO;
 import com.sky.entity.Orders;
 import com.sky.vo.OrderVO;
@@ -92,14 +93,10 @@ public interface OrderMapper {
     void updateStatusBatch(List<Orders> timeOutOrders, Orders orders);
 
 
-    /**
-     * 统计指定时间区间的营业额数据
-     *
-     * @param date
-     * @param status
-     * @return
-     */
-    @Select("select sum(amount) from orders where DATE(order_time) =#{date} AND status = #{status}")
-    BigDecimal getSumByDate(LocalDate date, Integer status);
+@Select("SELECT DATE(order_time) as date, COALESCE(SUM(amount), 0) as turnover " +
+        "FROM orders WHERE status = #{status} AND DATE(order_time) BETWEEN #{begin} AND #{end} " +
+        "GROUP BY DATE(order_time)")
+List<OrderStatisticsDTO> getTurnoverStatisticsByDateRange(LocalDate begin, LocalDate end, Integer status);
+
 
 }
