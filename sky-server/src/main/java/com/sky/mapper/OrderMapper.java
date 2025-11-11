@@ -1,16 +1,16 @@
 package com.sky.mapper;
 
 
-import cn.hutool.db.sql.Order;
+
 import com.github.pagehelper.Page;
 import com.sky.dto.OrdersPageQueryDTO;
 import com.sky.entity.Orders;
 import com.sky.vo.OrderVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
-import org.aspectj.weaver.ast.Or;
-import org.springframework.stereotype.Indexed;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -75,17 +75,31 @@ public interface OrderMapper {
 
     /**
      * 获取超时的订单
+     *
      * @param status
      * @param time
      *
      */
     @Select("select * from orders where status = #{status} and order_time < #{time}")
-    List<Orders>getByStatusAndOrderTimeLT(Integer status, LocalDateTime time);
+    List<Orders> getByStatusAndOrderTimeLT(Integer status, LocalDateTime time);
 
 
     /**
      * 批量更新订单信息
+     *
      * @param timeOutOrders
      */
-    void updateStatusBatch(List<Orders> timeOutOrders,Orders orders);
+    void updateStatusBatch(List<Orders> timeOutOrders, Orders orders);
+
+
+    /**
+     * 统计指定时间区间的营业额数据
+     *
+     * @param date
+     * @param status
+     * @return
+     */
+    @Select("select sum(amount) from orders where DATE(order_time) =#{date} AND status = #{status}")
+    BigDecimal getSumByDate(LocalDate date, Integer status);
+
 }
