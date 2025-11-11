@@ -5,10 +5,12 @@ import com.sky.result.Result;
 import com.sky.service.ReportService;
 import com.sky.vo.SalesTop10ReportVO;
 import com.sky.vo.TurnoverReportVO;
+import com.sky.vo.UserReportVO;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -33,7 +35,7 @@ public class ReportController {
     public Result<TurnoverReportVO> turnoverStatistics(
             @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate begin,
             @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate end) {
-        log.info("查询时间区间：{} ~ {}", begin, end);
+        log.info("营业额数据统计：{} ~ {}", begin, end);
         TurnoverReportVO turnoverStatistics = reportService.getTurnoverStatistics(begin, end);
         return Result.success(turnoverStatistics);
     }
@@ -48,7 +50,21 @@ public class ReportController {
             @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate begin,
             @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate end) {
         log.info("查询时间区间：{} ~ {}", begin, end);
-        SalesTop10ReportVO salesTop10 = reportService.getSalesTop10(begin,end);
+        SalesTop10ReportVO salesTop10 = reportService.getSalesTop10(begin, end);
         return Result.success(salesTop10);
+    }
+
+
+    /**
+     * 用户统计
+     *
+     * @return
+     */
+    @GetMapping("/userStatistics")
+    public Result<UserReportVO> userStatistics(
+            @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate begin,
+            @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate end) {
+        log.info("用户数据统计：{} ~ {}", begin, end);
+        return Result.success(reportService.getUserStatistics(begin, end));
     }
 }

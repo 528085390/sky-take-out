@@ -1,7 +1,6 @@
 package com.sky.mapper;
 
 
-
 import com.github.pagehelper.Page;
 import com.sky.dto.OrderStatisticsDTO;
 import com.sky.dto.OrdersPageQueryDTO;
@@ -93,10 +92,9 @@ public interface OrderMapper {
     void updateStatusBatch(List<Orders> timeOutOrders, Orders orders);
 
 
-@Select("SELECT DATE(order_time) as date, COALESCE(SUM(amount), 0) as turnover " +
-        "FROM orders WHERE status = #{status} AND DATE(order_time) BETWEEN #{begin} AND #{end} " +
-        "GROUP BY DATE(order_time)")
-List<OrderStatisticsDTO> getTurnoverStatisticsByDateRange(LocalDate begin, LocalDate end, Integer status);
-
+    @Select("SELECT DATE(order_time) as date, COALESCE(SUM(amount), 0) as turnover " +
+            "FROM orders WHERE status = #{status} AND DATE(order_time) BETWEEN #{begin} AND #{end} " +
+            "GROUP BY DATE(order_time)")
+    List<OrderStatisticsDTO> getTurnoverStatisticsByDateRange(LocalDate begin, LocalDate end, Integer status);
 
 }

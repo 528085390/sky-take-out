@@ -4,12 +4,15 @@ import com.sky.entity.User;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 
+import java.time.LocalDate;
+
 @Mapper
 public interface UserMapper {
 
 
     /**
      * 根据openid查询用户
+     *
      * @param openid
      * @return
      */
@@ -19,6 +22,7 @@ public interface UserMapper {
 
     /**
      * 插入用户数据
+     *
      * @param user
      */
     void insert(User user);
@@ -26,9 +30,20 @@ public interface UserMapper {
 
     /**
      * 根据id查询用户
+     *
      * @param id
      * @return
      */
     @Select("select * from user where id = #{id}")
-    User getById(Long currentId);
+    User getById(Long id);
+
+
+    /**
+     * 根据日期查询新增用户数量
+     *
+     * @param begin
+     * @param end
+     * @return
+     */
+    Integer countByDate(LocalDate begin, LocalDate end, LocalDate date);
 }

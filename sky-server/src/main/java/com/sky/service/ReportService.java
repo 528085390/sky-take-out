@@ -4,6 +4,7 @@ package com.sky.service;
 import com.sky.dto.DataOverViewQueryDTO;
 import com.sky.vo.SalesTop10ReportVO;
 import com.sky.vo.TurnoverReportVO;
+import com.sky.vo.UserReportVO;
 
 import java.time.LocalDate;
 
@@ -27,4 +28,14 @@ public interface ReportService {
      * @return
      */
     SalesTop10ReportVO getSalesTop10(LocalDate begin, LocalDate end);
+
+
+    /**
+     * 统计用户数据
+     *
+     * @param begin
+     * @param end
+     * @return
+     */
+    UserReportVO getUserStatistics(LocalDate begin, LocalDate end);
 }
