@@ -32,6 +32,7 @@ public class ShopStatusController {
         log.info("获取店铺营业状态");
         String status = (String) redisTemplate.opsForValue().get(KEY);
         if (status == null) {
+            redisTemplate.opsForValue().set(KEY, StatusConstant.DISABLE);
             return Result.success(StatusConstant.DISABLE);
         }
         return Result.success(Integer.parseInt(status));

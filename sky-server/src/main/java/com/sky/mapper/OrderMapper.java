@@ -1,13 +1,18 @@
 package com.sky.mapper;
 
 
+import cn.hutool.db.sql.Order;
 import com.github.pagehelper.Page;
 import com.sky.dto.OrdersPageQueryDTO;
 import com.sky.entity.Orders;
 import com.sky.vo.OrderVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
+import org.aspectj.weaver.ast.Or;
 import org.springframework.stereotype.Indexed;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 
 @Mapper
@@ -66,4 +71,21 @@ public interface OrderMapper {
      */
     @Select("select count(*) from orders where status = #{status}")
     Integer countStatus(Integer status);
+
+
+    /**
+     * 获取超时的订单
+     * @param status
+     * @param time
+     *
+     */
+    @Select("select * from orders where status = #{status} and order_time < #{time}")
+    List<Orders>getByStatusAndOrderTimeLT(Integer status, LocalDateTime time);
+
+
+    /**
+     * 批量更新订单信息
+     * @param timeOutOrders
+     */
+    void updateStatusBatch(List<Orders> timeOutOrders,Orders orders);
 }

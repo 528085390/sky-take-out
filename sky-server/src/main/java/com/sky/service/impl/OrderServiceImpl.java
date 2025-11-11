@@ -2,6 +2,7 @@ package com.sky.service.impl;
 
 
 import cn.hutool.core.util.IdUtil;
+import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import com.github.pagehelper.PageHelper;
 import com.sky.constant.MessageConstant;
@@ -17,13 +18,16 @@ import com.sky.vo.OrderPaymentVO;
 import com.sky.vo.OrderStatisticsVO;
 import com.sky.vo.OrderSubmitVO;
 import com.sky.vo.OrderVO;
+import com.sky.webSocket.WebSocketServer;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -43,8 +47,9 @@ public class OrderServiceImpl implements OrderService {
 
     @Autowired
     private OrderDetailMapper orderDetailMapper;
+
     @Autowired
-    private OrderService orderService;
+    private WebSocketServer webSocketServer;
 
 
     /**
@@ -124,14 +129,14 @@ public class OrderServiceImpl implements OrderService {
      */
     @Override
     public OrderVO getDetail(Long id) {
-        Orders order = orderMapper.getById(id);
+        Orders order = getOrders(id);
         List<OrderDetail> orderDetailList = orderDetailMapper.listByOrderId(id);
 
         //订单菜品信息
         String orderDishes = orderDetailList.stream().map(orderDetail -> {
             String name = orderDetail.getName();
             Integer number = orderDetail.getNumber();
-            String info = name + "x" + number;
+            String info = name + "*" + number;
             return info;
         }).collect(Collectors.joining(" , "));
 
@@ -163,7 +168,7 @@ public class OrderServiceImpl implements OrderService {
             String orderDishes = orderDetailList.stream().map(orderDetail -> {
                 String name = orderDetail.getName();
                 Integer number = orderDetail.getNumber();
-                String info = name + "x" + number;
+                String info = name + "*" + number;
                 return info;
             }).collect(Collectors.joining(" , "));
             order.setOrderDishes(orderDishes);
@@ -177,14 +182,14 @@ public class OrderServiceImpl implements OrderService {
 
 
     /**
-     * 取消订单
+     * 用户取消订单
      *
      * @param id
      */
     @Override
     public void cancel(Long id) {
         Long userId = BaseContext.getCurrentId();
-        Orders orders = orderMapper.getById(id);
+        Orders orders = getOrders(id);
         if (!orders.getUserId().equals(userId)) {
             throw new BaseException(MessageConstant.UNKNOWN_ERROR);
         }
@@ -210,18 +215,12 @@ public class OrderServiceImpl implements OrderService {
 
         //构造购物车数据
         List<ShoppingCart> shoppingCarts = orderDetails.stream().map(orderDetail -> {
-            ShoppingCart shoppingCart = ShoppingCart.builder()
-                    .name(orderDetail.getName())
-                    .userId(userId)
-                    .dishId(orderDetail.getDishId())
-                    .setmealId(orderDetail.getSetmealId())
-                    .dishFlavor(orderDetail.getDishFlavor())
-                    .number(orderDetail.getNumber())
-                    .amount(orderDetail.getAmount())
-                    .image(orderDetail.getImage())
-                    .createTime(LocalDateTime.now())
-                    .build();
+            ShoppingCart shoppingCart = new ShoppingCart();
+            BeanUtils.copyProperties(orderDetail, shoppingCart);
+            shoppingCart.setCreateTime(LocalDateTime.now());
+            shoppingCart.setUserId(userId);
             return shoppingCart;
+
         }).collect(Collectors.toList());
 
         shoppingCartMapper.deleteAllByUserId(userId);
@@ -278,6 +277,16 @@ public class OrderServiceImpl implements OrderService {
                 .build();
 
         orderMapper.update(orders);
+
+        Map<String,Object> map = new HashMap<>();
+        map.put("type", 1);
+        map.put("orderId", ordersDB.getId());
+        map.put("content","订单号" +outTradeNo);
+
+        String json = JSON.toJSONString(map);
+        webSocketServer.sendToAllClient(json);
+
+
     }
 
     /**
@@ -335,6 +344,12 @@ public class OrderServiceImpl implements OrderService {
      */
     @Override
     public void confirm(OrdersConfirmDTO ordersConfirmDTO) {
+        Orders ordersDB = getOrders(ordersConfirmDTO.getId());
+        if (!ordersDB.getStatus().equals(Orders.TO_BE_CONFIRMED)) {
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+
+
         Orders orders = Orders.builder()
                 .id(ordersConfirmDTO.getId())
                 .status(Orders.CONFIRMED)
@@ -350,12 +365,18 @@ public class OrderServiceImpl implements OrderService {
      */
     @Override
     public void reject(OrdersRejectionDTO ordersRejectionDTO) {
+        Orders ordersDB = getOrders(ordersRejectionDTO.getId());
+        if (!ordersDB.getStatus().equals(Orders.TO_BE_CONFIRMED)) {
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+
         Orders orders = Orders.builder()
                 .id(ordersRejectionDTO.getId())
                 .status(Orders.CANCELLED)
                 .rejectionReason(ordersRejectionDTO.getRejectionReason())
                 .cancelReason(ordersRejectionDTO.getRejectionReason())
                 .cancelTime(LocalDateTime.now())
+                .payStatus(Orders.REFUND)
                 .build();
         orderMapper.update(orders);
     }
@@ -368,10 +389,16 @@ public class OrderServiceImpl implements OrderService {
      */
     @Override
     public void cancel(OrdersCancelDTO ordersCancelDTO) {
+        Orders ordersDB = getOrders(ordersCancelDTO.getId());
+        if (!ordersDB.getStatus().equals(Orders.DELIVERY_IN_PROGRESS) && !ordersDB.getStatus().equals(Orders.CONFIRMED)) {
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+
         Orders orders = Orders.builder()
                 .id(ordersCancelDTO.getId())
                 .status(Orders.CANCELLED)
                 .cancelReason(ordersCancelDTO.getCancelReason())
+                .payStatus(Orders.REFUND)
                 .cancelTime(LocalDateTime.now())
                 .build();
         orderMapper.update(orders);
@@ -385,6 +412,11 @@ public class OrderServiceImpl implements OrderService {
      */
     @Override
     public void delivery(Long id) {
+        Orders ordersDB = getOrders(id);
+        if (!ordersDB.getStatus().equals(Orders.CONFIRMED)) {
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+
         Orders orders = Orders.builder()
                 .id(id)
                 .status(Orders.DELIVERY_IN_PROGRESS)
@@ -400,6 +432,11 @@ public class OrderServiceImpl implements OrderService {
      */
     @Override
     public void complete(Long id) {
+        Orders ordersDB = getOrders(id);
+        if (!ordersDB.getStatus().equals(Orders.DELIVERY_IN_PROGRESS)) {
+            throw new OrderBusinessException(MessageConstant.ORDER_STATUS_ERROR);
+        }
+
         Orders orders = Orders.builder()
                 .id(id)
                 .status(Orders.COMPLETED)
@@ -408,6 +445,13 @@ public class OrderServiceImpl implements OrderService {
         orderMapper.update(orders);
     }
 
+    private Orders getOrders(Long id) {
+        Orders ordersDB = orderMapper.getById(id);
+        if (ordersDB == null) {
+            throw new OrderBusinessException(MessageConstant.ORDER_NOT_FOUND);
+        }
+        return ordersDB;
+    }
 
 }
 

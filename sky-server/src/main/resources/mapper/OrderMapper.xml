@@ -74,6 +74,16 @@
         where id = #{id}
     </update>
 
+    <update id="updateStatusBatch">
+        update orders set
+        status = #{orders.status},
+        cancel_reason = #{orders.cancelReason},
+        cancel_time = #{orders.cancelTime}
+        where id in
+        <foreach item="o" collection="timeOutOrders" separator="," open="(" close=")">
+            #{o.id}
+        </foreach>
+    </update>
 
 
 </mapper>
