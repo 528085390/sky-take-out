@@ -1,5 +1,6 @@
 package com.sky.service.impl;
 
+import com.sky.dto.GoodsSalesDTO;
 import com.sky.dto.OrderStatisticsDTO;
 import com.sky.entity.Orders;
 import com.sky.mapper.OrderDetailMapper;
@@ -76,8 +77,16 @@ public class ReportServiceImpl implements ReportService {
      */
     @Override
     public SalesTop10ReportVO getSalesTop10(LocalDate begin, LocalDate end) {
-        orderDetailMapper.getSalesTop10(begin, end);
-        return null;
+        List<GoodsSalesDTO> salesTop10 = orderDetailMapper.getSalesTop10(begin, end);
+
+        List<String> nameList = salesTop10.stream().map(GoodsSalesDTO::getName).collect(Collectors.toList());
+        List<Integer> numberList = salesTop10.stream().map(GoodsSalesDTO::getNumber).collect(Collectors.toList());
+
+        return SalesTop10ReportVO.builder()
+                .nameList(StringUtils.join(nameList, ","))
+                .numberList(StringUtils.join(numberList, ","))
+                .build();
+
     }
 
 

@@ -47,10 +47,11 @@ public class ReportController {
      *
      * @return
      */
+    @GetMapping("/top10")
     public Result<SalesTop10ReportVO> salesTop10(
             @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate begin,
             @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate end) {
-        log.info("查询时间区间：{} ~ {}", begin, end);
+        log.info("销量排名top10：{} ~ {}", begin, end);
         SalesTop10ReportVO salesTop10 = reportService.getSalesTop10(begin, end);
         return Result.success(salesTop10);
     }

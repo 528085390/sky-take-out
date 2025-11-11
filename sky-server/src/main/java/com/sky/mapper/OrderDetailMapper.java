@@ -1,6 +1,7 @@
 package com.sky.mapper;
 
 import com.sky.dto.DataOverViewQueryDTO;
+import com.sky.dto.GoodsSalesDTO;
 import com.sky.entity.OrderDetail;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
@@ -32,8 +33,10 @@ public interface OrderDetailMapper {
     /**
      * 统计指定时间区间内的销量排名top10
      *
-     * @param dataOverViewQueryDTO
+     * @param begin
+     * @param end
+     * @return
+     *
      */
-
-    void getSalesTop10(LocalDate begin, LocalDate end);
+    List<GoodsSalesDTO> getSalesTop10(LocalDate begin, LocalDate end);
 }
