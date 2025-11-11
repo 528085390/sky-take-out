@@ -3,6 +3,7 @@ package com.sky.controller.admin;
 import com.sky.dto.DataOverViewQueryDTO;
 import com.sky.result.Result;
 import com.sky.service.ReportService;
+import com.sky.vo.OrderReportVO;
 import com.sky.vo.SalesTop10ReportVO;
 import com.sky.vo.TurnoverReportVO;
 import com.sky.vo.UserReportVO;
@@ -66,5 +67,19 @@ public class ReportController {
             @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate end) {
         log.info("用户数据统计：{} ~ {}", begin, end);
         return Result.success(reportService.getUserStatistics(begin, end));
+    }
+
+
+    /**
+     * 订单统计
+     *
+     * @return
+     */
+    @GetMapping("/ordersStatistics")
+    public Result<OrderReportVO> orderStatistics(
+            @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate begin,
+            @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate end) {
+        log.info("订单数据统计：{} ~ {}", begin, end);
+        return Result.success(reportService.getOrderStatistics(begin, end));
     }
 }

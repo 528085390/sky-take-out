@@ -97,4 +97,15 @@ public interface OrderMapper {
             "GROUP BY DATE(order_time)")
     List<OrderStatisticsDTO> getTurnoverStatisticsByDateRange(LocalDate begin, LocalDate end, Integer status);
 
+
+    /**
+     * 根据日期统计营业额数据
+     *
+     * @param begin
+     * @param end
+     * @param status
+     * @return
+     */
+    Integer countByDate(LocalDate begin, LocalDate end, LocalDate date, Integer status);
+
 }

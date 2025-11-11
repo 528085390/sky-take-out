@@ -43,6 +43,7 @@
         order by order_time desc
     </select>
 
+
     <update id="update" parameterType="com.sky.entity.Orders">
         update orders
         <set>
@@ -85,5 +86,21 @@
         </foreach>
     </update>
 
-
+    <select id="countByDate" resultType="java.lang.Integer">
+        select count(*) from orders
+        <where>
+            <if test="status != null">
+                and status = #{status}
+            </if>
+            <if test="begin != null">
+                AND DATE(order_time) >= #{begin}
+            </if>
+            <if test="end != null">
+                AND DATE(order_time) &lt;= #{end}
+            </if>
+            <if test="date != null">
+                AND DATE(order_time) = #{date}
+            </if>
+        </where>
+    </select>
 </mapper>
