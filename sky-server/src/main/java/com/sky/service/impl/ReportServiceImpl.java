@@ -51,7 +51,7 @@ public class ReportServiceImpl implements ReportService {
         }
 
         // 一次性查询所有日期的营业额数据
-        List<OrderStatisticsDTO> statisticsList = orderMapper.getTurnoverStatisticsByDateRange(begin, end, Orders.COMPLETED);
+        List<OrderStatisticsDTO> statisticsList = orderMapper.getTurnoverByDateRange(begin, end, Orders.COMPLETED);
 
         // 创建日期到营业额的映射
         Map<LocalDate, BigDecimal> statisticsMap = statisticsList.stream()

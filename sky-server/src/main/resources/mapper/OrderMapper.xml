@@ -103,4 +103,15 @@
             </if>
         </where>
     </select>
+
+    <select id="getOverviewOrders" resultType="com.sky.vo.OrderOverViewVO">
+        SELECT COUNT(*)                                                 as allOrders,
+               COUNT(CASE WHEN status = #{cancelledStatus} THEN 1 END)  as cancelledOrders,
+               COUNT(CASE WHEN status = #{completedStatus} THEN 1 END)  as completedOrders,
+               COUNT(CASE WHEN status = #{deliveringStatus} THEN 1 END) as deliveredOrders,
+               COUNT(CASE WHEN status = #{confirmedStatus} THEN 1 END)  as waitingOrders
+        FROM orders
+        WHERE DATE(order_time) =DATE(NOW())
+    </select>
+
 </mapper>

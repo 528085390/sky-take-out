@@ -18,7 +18,7 @@
                  JOIN
              orders o ON od.order_id = o.id
         WHERE o.status = 5
-          and o.order_time BETWEEN #{begin} AND #{end}
+          and DATE(o.order_time) BETWEEN #{begin} AND #{end}
         gROUP BY od.name
         ORDER BY number DESC
         LIMIT 0,10
