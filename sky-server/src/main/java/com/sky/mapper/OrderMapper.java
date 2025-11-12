@@ -100,10 +100,7 @@ public interface OrderMapper {
      * @param status
      * @return
      */
-    @Select("SELECT DATE(order_time) as date, COALESCE(SUM(amount), 0) as turnover " +
-            "FROM orders WHERE status = #{status} AND DATE(order_time) BETWEEN #{begin} AND #{end} " +
-            "GROUP BY DATE(order_time)")
-    List<OrderStatisticsDTO> getTurnoverByDateRange(LocalDate begin, LocalDate end, Integer status);
+    List<OrderStatisticsDTO> getTurnoverByDateRange(LocalDate begin, LocalDate end, LocalDate date, Integer status);
 
 
     /**
@@ -123,10 +120,10 @@ public interface OrderMapper {
      * @return
      */
     OrderOverViewVO getOverviewOrders(
-                                      Integer cancelledStatus,
-                                      Integer completedStatus,
-                                      Integer deliveringStatus,
-                                      Integer confirmedStatus);
+            Integer cancelledStatus,
+            Integer completedStatus,
+            Integer deliveringStatus,
+            Integer confirmedStatus);
 
 
 }

@@ -114,4 +114,19 @@
         WHERE DATE(order_time) =DATE(NOW())
     </select>
 
+    <select id="getTurnoverByDateRange" resultType="com.sky.dto.OrderStatisticsDTO">
+        SELECT DATE(order_time) as date, COALESCE(SUM(amount), 0) as turnover
+        FROM orders
+        <where>
+            status = #{status}
+            <if test="begin != null &amp;&amp; end != null">
+                AND DATE(order_time) BETWEEN #{begin} AND #{end}
+            </if>
+            <if test="date != null">
+                AND DATE(order_time) = #{date}
+            </if>
+        </where>
+        GROUP BY DATE(order_time)
+    </select>
+
 </mapper>

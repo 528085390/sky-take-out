@@ -7,14 +7,19 @@ import com.sky.mapper.OrderDetailMapper;
 import com.sky.mapper.OrderMapper;
 import com.sky.mapper.UserMapper;
 import com.sky.service.ReportService;
-import com.sky.vo.OrderReportVO;
-import com.sky.vo.SalesTop10ReportVO;
-import com.sky.vo.TurnoverReportVO;
-import com.sky.vo.UserReportVO;
+import com.sky.service.WorkSpaceService;
+import com.sky.vo.*;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -30,8 +35,13 @@ public class ReportServiceImpl implements ReportService {
 
     @Autowired
     private OrderDetailMapper orderDetailMapper;
+
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private WorkSpaceService workSpaceService;
+
 
     /**
      * 营业额统计
@@ -51,7 +61,7 @@ public class ReportServiceImpl implements ReportService {
         }
 
         // 一次性查询所有日期的营业额数据
-        List<OrderStatisticsDTO> statisticsList = orderMapper.getTurnoverByDateRange(begin, end, Orders.COMPLETED);
+        List<OrderStatisticsDTO> statisticsList = orderMapper.getTurnoverByDateRange(begin, end, null, Orders.COMPLETED);
 
         // 创建日期到营业额的映射
         Map<LocalDate, BigDecimal> statisticsMap = statisticsList.stream()
@@ -174,5 +184,65 @@ public class ReportServiceImpl implements ReportService {
                 .validOrderCount(validOrderCount)
                 .orderCompletionRate(orderCompletionRate)
                 .build();
+    }
+
+
+    /**
+     * 数据导出
+     *
+     * @return
+     */
+    @Override
+    public void export(HttpServletResponse response) {
+        LocalDate begin = LocalDate.now().minusDays(30);
+        LocalDate end = LocalDate.now().minusDays(1);
+        BusinessDataVO businessData = workSpaceService.getBusinessData(begin, end, null);
+
+        // 创建Excel
+        InputStream in = this.getClass().getClassLoader().getResourceAsStream("template/运营数据报表模板.xlsx");
+        try {
+            // 创建Excel
+            XSSFWorkbook excel = new XSSFWorkbook(in);
+
+            // 获取第一个Sheet
+            XSSFSheet sheet = excel.getSheetAt(0);
+
+            // 填充时间
+            sheet.getRow(1).getCell(1).setCellValue("时间" + begin + "- " + end);
+
+            // 填充营业额数据
+            XSSFRow row = sheet.getRow(3);
+            row.getCell(2).setCellValue(businessData.getTurnover());
+            row.getCell(4).setCellValue(businessData.getOrderCompletionRate());
+            row.getCell(6).setCellValue(businessData.getNewUsers());
+
+            row = sheet.getRow(4);
+            row.getCell(2).setCellValue(businessData.getValidOrderCount());
+            row.getCell(4).setCellValue(businessData.getUnitPrice());
+
+            // 填充明细数据
+            for (int i = 0; i < 30; i++){
+                LocalDate date = begin.plusDays(i);
+                BusinessDataVO dayBusinessData = workSpaceService.getBusinessData(null, null, date);
+                row = sheet.getRow(7 + i);
+                row.getCell(1).setCellValue(date.toString());
+                row.getCell(2).setCellValue(dayBusinessData.getTurnover());
+                row.getCell(3).setCellValue(dayBusinessData.getValidOrderCount());
+                row.getCell(4).setCellValue(dayBusinessData.getOrderCompletionRate());
+                row.getCell(5).setCellValue(dayBusinessData.getUnitPrice());
+                row.getCell(6).setCellValue(dayBusinessData.getNewUsers());
+            }
+
+
+            ServletOutputStream out = response.getOutputStream();
+            excel.write(out);
+
+            out.close();
+            excel.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
     }
 }
