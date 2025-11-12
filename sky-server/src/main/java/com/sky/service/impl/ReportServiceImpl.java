@@ -9,6 +9,7 @@ import com.sky.mapper.UserMapper;
 import com.sky.service.ReportService;
 import com.sky.service.WorkSpaceService;
 import com.sky.vo.*;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -28,6 +29,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
+@Slf4j
 public class ReportServiceImpl implements ReportService {
 
     @Autowired
@@ -193,7 +195,7 @@ public class ReportServiceImpl implements ReportService {
      * @return
      */
     @Override
-    public void export(HttpServletResponse response) {
+    public void export(HttpServletResponse response){
         LocalDate begin = LocalDate.now().minusDays(30);
         LocalDate end = LocalDate.now().minusDays(1);
         BusinessDataVO businessData = workSpaceService.getBusinessData(begin, end, null);
@@ -221,7 +223,7 @@ public class ReportServiceImpl implements ReportService {
             row.getCell(4).setCellValue(businessData.getUnitPrice());
 
             // 填充明细数据
-            for (int i = 0; i < 30; i++){
+            for (int i = 0; i < 30; i++) {
                 LocalDate date = begin.plusDays(i);
                 BusinessDataVO dayBusinessData = workSpaceService.getBusinessData(null, null, date);
                 row = sheet.getRow(7 + i);
@@ -237,10 +239,11 @@ public class ReportServiceImpl implements ReportService {
             ServletOutputStream out = response.getOutputStream();
             excel.write(out);
 
+            in.close();
             out.close();
             excel.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            log.error("文件处理异常", e);
         }
 
 
