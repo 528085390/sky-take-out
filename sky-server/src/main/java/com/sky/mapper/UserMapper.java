@@ -1,10 +1,12 @@
 package com.sky.mapper;
 
+import com.sky.dto.UserStatisticsDTO;
 import com.sky.entity.User;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Mapper
 public interface UserMapper {
@@ -45,5 +47,14 @@ public interface UserMapper {
      * @param end
      * @return
      */
-    Integer countByDate(LocalDate begin, LocalDate end, LocalDate date);
+    List<UserStatisticsDTO> countByDate(LocalDate begin, LocalDate end, LocalDate date);
+
+    /**
+     * 根据日期查询总用户数量
+     *
+     * @param begin
+     * @param end
+     * @return
+     */
+    UserStatisticsDTO countTotalByDate(LocalDate begin, LocalDate end, LocalDate date);
 }

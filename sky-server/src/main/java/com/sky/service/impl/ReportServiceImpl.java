@@ -2,6 +2,7 @@ package com.sky.service.impl;
 
 import com.sky.dto.GoodsSalesDTO;
 import com.sky.dto.OrderStatisticsDTO;
+import com.sky.dto.UserStatisticsDTO;
 import com.sky.entity.Orders;
 import com.sky.mapper.OrderDetailMapper;
 import com.sky.mapper.OrderMapper;
@@ -66,12 +67,12 @@ public class ReportServiceImpl implements ReportService {
         List<OrderStatisticsDTO> statisticsList = orderMapper.getTurnoverByDateRange(begin, end, null, Orders.COMPLETED);
 
         // 创建日期到营业额的映射
-        Map<LocalDate, BigDecimal> statisticsMap = statisticsList.stream()
+        Map<LocalDate, BigDecimal> map = statisticsList.stream()
                 .collect(Collectors.toMap(OrderStatisticsDTO::getDate, OrderStatisticsDTO::getTurnover));
 
         // 构建营业额列表，缺失数据用0填充
         List<BigDecimal> turnoverList = dateList.stream()
-                .map(date -> statisticsMap.getOrDefault(date, BigDecimal.ZERO))
+                .map(date -> map.getOrDefault(date, BigDecimal.ZERO))
                 .collect(Collectors.toList());
 
         // 构建并返回 TurnoverReportVO 对象
@@ -117,19 +118,37 @@ public class ReportServiceImpl implements ReportService {
             current = current.plusDays(1);
         }
 
-        // 查询新用户数
-        List<Integer> newUserList = new ArrayList<>();
-        // 查询总用户数
-        List<Integer> totalUserList = new ArrayList<>();
-        for (LocalDate date : dateList) {
-            Integer newUser = userMapper.countByDate(null, null, date);
-            newUser = newUser == null ? 0 : newUser;
-            newUserList.add(newUser);
 
-            Integer totalUser = userMapper.countByDate(null, date, null);
-            totalUser = totalUser == null ? 0 : totalUser;
-            totalUserList.add(totalUser);
+//        for (LocalDate date : dateList) {
+//            Integer newUser = userMapper.countByDate(null, null, date);
+//            newUser = newUser == null ? 0 : newUser;
+//            newUserList.add(newUser);
+//
+//            Integer totalUser = userMapper.countByDate(null, date, null);
+//            totalUser = totalUser == null ? 0 : totalUser;
+//            totalUserList.add(totalUser);
+//        }
+        // 查询新用户数
+        List<UserStatisticsDTO> newUserStatistics = userMapper.countByDate(begin, end, null);
+        Map<LocalDate, Integer> newUsersMap = newUserStatistics.stream()
+                .collect(Collectors.toMap(UserStatisticsDTO::getDate, UserStatisticsDTO::getTotal));
+        List<Integer> newUserList = dateList.stream()
+                .map(date -> newUsersMap.getOrDefault(date, 0))
+                .collect(Collectors.toList());
+
+
+        // 查询总用户数
+        List<UserStatisticsDTO> totalUserStatistics = new ArrayList<>();
+        for (LocalDate date : dateList) {
+            UserStatisticsDTO totalUser = userMapper.countTotalByDate(null, date, null);
+            totalUser.setDate(date);
+            totalUserStatistics.add(totalUser);
         }
+        Map<LocalDate, Integer> totalUsersMap = totalUserStatistics.stream()
+                .collect(Collectors.toMap(UserStatisticsDTO::getDate, UserStatisticsDTO::getTotal));
+        List<Integer> totalUserList = dateList.stream()
+                .map(date -> totalUsersMap.getOrDefault(date, 0))
+                .collect(Collectors.toList());
 
 
         return UserReportVO.builder()
@@ -195,7 +214,7 @@ public class ReportServiceImpl implements ReportService {
      * @return
      */
     @Override
-    public void export(HttpServletResponse response){
+    public void export(HttpServletResponse response) {
         LocalDate begin = LocalDate.now().minusDays(30);
         LocalDate end = LocalDate.now().minusDays(1);
         BusinessDataVO businessData = workSpaceService.getBusinessData(begin, end, null);

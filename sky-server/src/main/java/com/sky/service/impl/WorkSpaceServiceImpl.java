@@ -2,6 +2,7 @@ package com.sky.service.impl;
 
 import com.sky.constant.StatusConstant;
 import com.sky.dto.OrderStatisticsDTO;
+import com.sky.dto.UserStatisticsDTO;
 import com.sky.entity.Dish;
 import com.sky.entity.Orders;
 import com.sky.entity.Setmeal;
@@ -57,7 +58,8 @@ public class WorkSpaceServiceImpl implements WorkSpaceService {
         }
 
         // 新增用户数
-        Integer newUsers = userMapper.countByDate(begin, end, date);
+        List<UserStatisticsDTO> newUsersList = userMapper.countByDate(begin, end, date);
+        Integer newUsers = newUsersList.stream().map(UserStatisticsDTO::getTotal).reduce(0, Integer::sum);
 
         // 平均客单价
         Double unitPrice = 0.0;
